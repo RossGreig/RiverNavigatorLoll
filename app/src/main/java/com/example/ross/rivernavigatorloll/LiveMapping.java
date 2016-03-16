@@ -1,16 +1,14 @@
 package com.example.ross.rivernavigatorloll;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -18,11 +16,11 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -38,8 +36,8 @@ public class LiveMapping extends FragmentActivity implements GoogleApiClient.Con
     Location mLastLocation;
     Marker mCurrLocationMarker;
     boolean bPermissionGranted;
-    private Context mContext;
-    private LocationManager locationManager;
+    TextView mTextView;
+    UiSettings mUiSettings;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -63,6 +61,14 @@ public class LiveMapping extends FragmentActivity implements GoogleApiClient.Con
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,mLocationRequest, this);
+        }
+    }
+
+    @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
@@ -76,6 +82,7 @@ public class LiveMapping extends FragmentActivity implements GoogleApiClient.Con
             buildGoogleApiClient();
             mMap.setMyLocationEnabled(true);
         }
+        //mUiSettings.setCompassEnabled(true);
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -91,7 +98,7 @@ public class LiveMapping extends FragmentActivity implements GoogleApiClient.Con
     public void onConnected(Bundle bundle) {
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setFastestInterval(2000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
@@ -110,23 +117,22 @@ public class LiveMapping extends FragmentActivity implements GoogleApiClient.Con
             mCurrLocationMarker.remove();
         }
 
-        //Place current location marker
-        //MarkerOptions markerOptions = new MarkerOptions();
-        //markerOptions.position(latLng);
-        //markerOptions.title("Current Position");
-        //markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
-        // mCurrLocationMarker = mMap.addMarker(markerOptions);
-
             final LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
             //move map camera
-            //mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+            mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
 
             if (mGoogleApiClient != null) {
-                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                //LocationServices.FusedLocationApi.Updates(mGoogleApiClient, this);
             }
-
+        //Place current location marker
+        double lat = location.getLatitude();
+        double lng = location.getLongitude();
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(latLng);
+        markerOptions.title("Lat: " + lat + " Lng: " + lng);
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+        mCurrLocationMarker = mMap.addMarker(markerOptions);
     }
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
